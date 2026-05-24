@@ -2,6 +2,16 @@ const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
+const EMAIL = 'cmjf88@gmail.com';
+const PASSWORD = 'Falcons%246';
+
+async function getSession() {
+  const res = await fetch(`https://www.myfxbook.com/api/login.json?email=${EMAIL}&password=${PASSWORD}`);
+  const data = await res.json();
+  if (data.error) throw new Error('Login failed');
+  return data.session;
+}
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -16,8 +26,7 @@ app.get('/', (req, res) => {
 
 app.get('/accounts', async (req, res) => {
   try {
-    const session = req.query.session;
-    if (!session) return res.json({ error: true, message: 'No session provided' });
+    const session = await getSession();
     const response = await fetch(`https://www.myfxbook.com/api/get-my-accounts.json?session=${session}`);
     const data = await response.json();
     res.json(data);
