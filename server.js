@@ -6,13 +6,13 @@ const EMAIL = 'cmjf88@gmail.com';
 const PASSWORD = 'Falcons%246';
 
 async function getSession() {
-  const res = await fetch(`https://www.myfxbook.com/api/login.json?email=${EMAIL}&password=${PASSWORD}`);
+  const res = await fetch('https://www.myfxbook.com/api/login.json?email=' + EMAIL + '&password=' + PASSWORD);
   const data = await res.json();
   if (data.error) throw new Error('Login failed');
   return data.session;
 }
 
-app.use((req, res, next) => {
+app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
@@ -20,82 +20,80 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
+app.get('/', function(req, res) {
   res.json({ status: 'ok', message: 'Myfxbook proxy running' });
 });
 
-// All accounts
-app.get('/accounts', async (req, res) => {
+app.get('/accounts', async function(req, res) {
   try {
-    const session = await getSession();
-    const response = await fetch(`https://www.myfxbook.com/api/get-my-accounts.json?session=${session}`);
+    var session = await getSession();
+    var response = await fetch('https://www.myfxbook.com/api/get-my-accounts.json?session=' + session);
     res.json(await response.json());
   } catch(e) { res.json({ error: true, message: e.message }); }
 });
 
-// Full closed trade history - entry, exit, pips, profit, direction, duration, lots
-app.get('/history', async (req, res) => {
+app.get('/history', async function(req, res) {
   try {
-    const session = await getSession();
-    const { id } = req.query;
+    var session = await getSession();
+    var id = req.query.id;
     if (!id) return res.json({ error: true, message: 'No account id provided' });
-    const response = await fetch(`https://www.myfxbook.com/api/get-history.json?session=${session}&id=${id}`);
+    var response = await fetch('https://www.myfxbook.com/api/get-history.json?session=' + session + '&id=' + id);
     res.json(await response.json());
   } catch(e) { res.json({ error: true, message: e.message }); }
 });
 
-// Open trades - current positions, entry price, floating pips
-app.get('/open-trades', async (req, res) => {
+app.get('/open-trades', async function(req, res) {
   try {
-    const session = await getSession();
-    const { id } = req.query;
+    var session = await getSession();
+    var id = req.query.id;
     if (!id) return res.json({ error: true, message: 'No account id provided' });
-    const response = await fetch(`https://www.myfxbook.com/api/get-open-trades.json?session=${session}&id=${id}`);
+    var response = await fetch('https://www.myfxbook.com/api/get-open-trades.json?session=' + session + '&id=' + id);
     res.json(await response.json());
   } catch(e) { res.json({ error: true, message: e.message }); }
 });
 
-// Daily gain/loss breakdown
-app.get('/daily', async (req, res) => {
+app.get('/daily', async function(req, res) {
   try {
-    const session = await getSession();
-    const { id, start, end } = req.query;
+    var session = await getSession();
+    var id = req.query.id;
     if (!id) return res.json({ error: true, message: 'No account id provided' });
-    const s = start || '2026-01-01';
-    const e = end || new Date().toISOString().split('T')[0];
-    const response = await fetch(`https://www.myfxbook.com/api/get-data-daily.json?session=${session}&id=${id}&start=${s}&end=${e}`);
+    var start = req.query.start || '2026-01-01';
+    var end = req.query.end || new Date().toISOString().split('T')[0];
+    var response = await fetch('https://www.myfxbook.com/api/get-data-daily.json?session=' + session + '&id=' + id + '&start=' + start + '&end=' + end);
     res.json(await response.json());
   } catch(e) { res.json({ error: true, message: e.message }); }
 });
 
-// Equity curve over time
-app.get('/gain', async (req, res) => {
+app.get('/gain', async function(req, res) {
   try {
-    const session = await getSession();
-    const { id, start, end } = req.query;
+    var session = await getSession();
+    var id = req.query.id;
     if (!id) return res.json({ error: true, message: 'No account id provided' });
-    const s = start || '2026-01-01';
-    const e = end || new Date().toISOString().split('T')[0];
-    const response = await fetch(`https://www.myfxbook.com/api/get-gain.json?session=${session}&id=${id}&start=${s}&end=${e}`);
+    var start = req.query.start || '2026-01-01';
+    var end = req.query.end || new Date().toISOString().split('T')[0];
+    var response = await fetch('https://www.myfxbook.com/api/get-gain.json?session=' + session + '&id=' + id + '&start=' + start + '&end=' + end);
     res.json(await response.json());
   } catch(e) { res.json({ error: true, message: e.message }); }
 });
 
-// Full account data in one call - accounts + open trades + history + daily
-app.get('/full', async (req, res) => {
+app.get('/full', async function(req, res) {
   try {
-    const session = await getSession();
-    const { id } = req.query;
+    var session = await getSession();
+    var id = req.query.id;
     if (!id) return res.json({ error: true, message: 'No account id provided' });
-    const start = '2026-01-01';
-    const end = new Date().toISOString().split('T')[0];
-    const [accounts, openTrades, history, daily, gain] = await Promise.all([
-      fetch(`https://www.myfxbook.com/api/get-my-accounts.json?session=${session}`).then(r => r.json()),
-      fetch(`https://www.myfxbook.com/api/get-open-trades.json?session=${session}&id=${id}`).then(r => r.json()),
-      fetch(`https://www.myfxbook.com/api/get-history.json?session=${session}&id=${id}`).then(r => r.json()),
-      fetch(`https://www.myfxbook.com/api/get-data-daily.json?session=${session}&id=${id}&start=${start}&end=${end}`).then(r => r.json()),
-      fetch(`https://www.myfxbook.com/api/get-gain.json?session=${session}&id=${id}&start=${start}&end=${end}`).then(r => r.json()),
+    var start = '2026-01-01';
+    var end = new Date().toISOString().split('T')[0];
+    var results = await Promise.all([
+      fetch('https://www.myfxbook.com/api/get-my-accounts.json?session=' + session).then(function(r) { return r.json(); }),
+      fetch('https://www.myfxbook.com/api/get-open-trades.json?session=' + session + '&id=' + id).then(function(r) { return r.json(); }),
+      fetch('https://www.myfxbook.com/api/get-history.json?session=' + session + '&id=' + id).then(function(r) { return r.json(); }),
+      fetch('https://www.myfxbook.com/api/get-data-daily.json?session=' + session + '&id=' + id + '&start=' + start + '&end=' + end).then(function(r) { return r.json(); }),
+      fetch('https://www.myfxbook.com/api/get-gain.json?session=' + session + '&id=' + id + '&start=' + start + '&end=' + end).then(function(r) { return r.json(); })
     ]);
-    const account = accounts.accounts ? accounts.accounts.find(a => String(a.id) === String(id)) : null;
-    res.json({ account, openTrades, history, daily, gain });
-  } catch(e) { res.json({ error: t
+    var account = results[0].accounts ? results[0].accounts.find(function(a) { return String(a.id) === String(id); }) : null;
+    res.json({ account: account, openTrades: results[1], history: results[2], daily: results[3], gain: results[4] });
+  } catch(e) { res.json({ error: true, message: e.message }); }
+});
+
+var PORT = process.env.PORT || 3000;
+app.listen(PORT, function() { console.log('Proxy running on port ' + PORT); });
