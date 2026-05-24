@@ -35,5 +35,31 @@ app.get('/accounts', async (req, res) => {
   }
 });
 
+app.get('/history', async (req, res) => {
+  try {
+    const session = await getSession();
+    const id = req.query.id;
+    if (!id) return res.json({ error: true, message: 'No account id provided' });
+    const response = await fetch(`https://www.myfxbook.com/api/get-history.json?session=${session}&id=${id}`);
+    const data = await response.json();
+    res.json(data);
+  } catch(e) {
+    res.json({ error: true, message: e.message });
+  }
+});
+
+app.get('/open-trades', async (req, res) => {
+  try {
+    const session = await getSession();
+    const id = req.query.id;
+    if (!id) return res.json({ error: true, message: 'No account id provided' });
+    const response = await fetch(`https://www.myfxbook.com/api/get-open-trades.json?session=${session}&id=${id}`);
+    const data = await response.json();
+    res.json(data);
+  } catch(e) {
+    res.json({ error: true, message: e.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Proxy running on port', PORT));
